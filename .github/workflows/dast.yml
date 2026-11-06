@@ -39,3 +39,15 @@ jobs:
           cmd_options: "-I -m 2"
           allow_issue_writing: false
           fail_action: true
+      - name: Falhar se o ZAP achou XSS
+        run: |
+          if [ ! -f report_json.json ]; then
+            echo "Relatorio JSON nao encontrado"
+            ls
+            exit 1
+          fi
+          if grep -Eqi '"pluginid"[[:space:]]*:[[:space:]]*"(40012|10010)"' report_json.json; then
+            echo "ZAP achou XSS refletido (40012) ou cookie sem HttpOnly (10010)"
+            exit 1
+          fi
+          echo "Sem XSS refletido nem cookie sem HttpOnly"
