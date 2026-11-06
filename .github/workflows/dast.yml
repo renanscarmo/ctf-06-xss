@@ -1,0 +1,41 @@
+name: DAST ZAP
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dast_zap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Ligar o app em segundo plano
+        run: |
+          nohup python app.py > app.log 2>&1 &
+          for i in $(seq 1 15); do
+            curl -s http://127.0.0.1:5000/ > /dev/null && break
+            sleep 1
+          done
+
+      - name: Criar regras do ZAP
+        run: |
+          mkdir -p .zap
+          printf '40012\tFAIL\t(XSS refletido)\n10010\tFAIL\t(Cookie sem HttpOnly)\n' > .zap/rules.tsv
+
+      - name: ZAP full scan
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: "http://127.0.0.1:5000"
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-I -m 2"
+          allow_issue_writing: false
+          fail_action: true
