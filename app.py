@@ -1,4 +1,5 @@
 from flask import Flask, make_response, request
+from markupsafe import escape
 
 app = Flask(__name__)
 
@@ -17,13 +18,13 @@ def home():
         </form>
         """
     )
-    resposta.set_cookie("sessao", FLAG, httponly=False)
+    resposta.set_cookie("sessao", FLAG, httponly=True, samesite="Strict")
     return resposta
 
 
 @app.route("/ola")
 def ola():
-    nome = request.args.get("nome", "visitante")
+    nome = escape(request.args.get("nome", "visitante"))
     return f"<h1>Ola, {nome}!</h1><a href='/'>Voltar</a>"
 
 
